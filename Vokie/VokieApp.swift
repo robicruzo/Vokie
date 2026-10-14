@@ -9,9 +9,12 @@ import SwiftUI
 
 @main
 struct VokieApp: App {
+    @State private var store = VocabularyStore()
+
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        MenuBarExtra("Vokie", systemImage: "character.book.closed") {
+            MenuBarView(store: store)
         }
+        .menuBarExtraStyle(.window)
     }
 }
