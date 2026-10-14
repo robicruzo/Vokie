@@ -1,0 +1,864 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Building Vokie</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+<style>
+  :root {
+    --bg: #fbfaf7;
+    --surface: #ffffff;
+    --ink: #1d1d1f;
+    --muted: #5f6368;
+    --rule: #e3e0d8;
+    --accent: #b5452b;
+    --accent-soft: #f6e7e2;
+    --code-bg: #f4f2ec;
+    --note: #2f6f8f;
+    --note-soft: #e4f0f5;
+    --warn: #8a6a12;
+    --warn-soft: #f7f0dc;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+    --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17171a;
+      --surface: #1f1f23;
+      --ink: #ecebe8;
+      --muted: #a3a3a8;
+      --rule: #34343a;
+      --accent: #ec8a6f;
+      --accent-soft: #3a2621;
+      --code-bg: #232327;
+      --note: #7fc0dd;
+      --note-soft: #1d2d35;
+      --warn: #e2c06a;
+      --warn-soft: #332b17;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17171a; --surface: #1f1f23; --ink: #ecebe8; --muted: #a3a3a8; --rule: #34343a;
+    --accent: #ec8a6f; --accent-soft: #3a2621; --code-bg: #232327;
+    --note: #7fc0dd; --note-soft: #1d2d35; --warn: #e2c06a; --warn-soft: #332b17;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 18px/1.65 var(--serif);
+  }
+  .page { max-width: 760px; margin: 0 auto; padding: 48px 16px 96px; }
+
+  header.opener { border-bottom: 1px solid var(--rule); padding-bottom: 32px; margin-bottom: 40px; }
+  .kicker { font: 600 13px/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+  h1 { font-size: 44px; line-height: 1.1; margin: 14px 0 12px; font-weight: 600; }
+  .dek { font-size: 21px; color: var(--muted); margin: 0; font-style: italic; }
+
+  h2 { font-size: 28px; line-height: 1.25; margin: 64px 0 8px; font-weight: 600; }
+  h2 .num { color: var(--accent); font-family: var(--sans); font-size: 18px; display: block; letter-spacing: .06em; margin-bottom: 4px; }
+  h3 { font: 600 19px/1.35 var(--sans); margin: 36px 0 6px; }
+  p, li { hyphens: auto; }
+  a { color: var(--accent); }
+  strong { font-weight: 600; }
+
+  code { font: 0.84em var(--mono); background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  pre { margin: 18px 0 22px; background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px; overflow-x: auto; }
+  pre code { display: block; padding: 14px 16px; background: transparent; font-size: 14px; line-height: 1.55; }
+  pre code.hljs { background: transparent; }
+  .file { font: 600 12px/1 var(--sans); color: var(--muted); letter-spacing: .04em; margin: 26px 0 -12px; }
+  .file + pre { margin-top: 16px; }
+
+  .box { border-radius: 8px; padding: 14px 18px; margin: 24px 0; font-size: 16.5px; }
+  .box > :first-child { margin-top: 0; }
+  .box > :last-child { margin-bottom: 0; }
+  .box .label { font: 700 12px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; display: block; margin-bottom: 8px; }
+  .syntax { background: var(--note-soft); border-left: 4px solid var(--note); }
+  .syntax .label { color: var(--note); }
+  .why { background: var(--accent-soft); border-left: 4px solid var(--accent); }
+  .why .label { color: var(--accent); }
+  .ios { background: var(--warn-soft); border-left: 4px solid var(--warn); }
+  .ios .label { color: var(--warn); }
+
+  .toc { font-family: var(--sans); font-size: 15px; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 16px 20px; }
+  .toc ol { margin: 6px 0 0; padding-left: 20px; }
+  .toc li { margin: 3px 0; }
+
+  table { width: 100%; border-collapse: collapse; font: 15px/1.45 var(--sans); margin: 18px 0 24px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-weight: 600; color: var(--muted); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+  .table-wrap { overflow-x: auto; }
+
+  figure { margin: 28px 0; }
+  figure svg { width: 100%; height: auto; display: block; }
+  figcaption { font: 14px/1.45 var(--sans); color: var(--muted); margin-top: 8px; }
+  svg .bx { fill: var(--surface); stroke: var(--rule); stroke-width: 1.5; }
+  svg .bx.hot { stroke: var(--accent); }
+  svg .t { fill: var(--ink); font: 600 14px var(--sans); }
+  svg .s { fill: var(--muted); font: 12px var(--sans); }
+  svg .ln { stroke: var(--muted); stroke-width: 1.5; fill: none; }
+  svg .ah { fill: var(--muted); }
+
+  .exercises ol > li { margin-bottom: 12px; }
+  dl.glossary { font-size: 16.5px; }
+  dl.glossary dt { font: 600 15px var(--sans); margin-top: 14px; }
+  dl.glossary dd { margin: 2px 0 0 0; color: var(--muted); }
+
+  @media (max-width: 600px) {
+    body { font-size: 17px; }
+    h1 { font-size: 34px; }
+    h2 { font-size: 24px; }
+    .page { padding-top: 32px; }
+    pre code { font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+<main class="page">
+
+<header class="opener">
+  <div class="kicker">Chapter 4 · Your first real app</div>
+  <h1>Building Vokie</h1>
+  <p class="dek">A menu bar vocabulary keeper, and a guided tour of the Swift and SwiftUI ideas that hold it together.</p>
+</header>
+
+<p>So far you have written Swift in playgrounds and seen SwiftUI views in previews. In this chapter we read a complete, working app from top to bottom. It's small: four source files and about 300 lines. But it touches most of the ideas you'll use every day: value and reference types, optionals, enums with associated values, protocols, property wrappers, macros, SwiftUI's data flow, and the project settings that turn source code into an app the operating system will run.</p>
+
+<p>The app is called <strong>Vokie</strong>. It lives in the macOS menu bar. Click its book icon and a small panel drops down with a text field. Paste in a word, press Return, and Vokie looks the word up in the dictionary built into the Mac and adds the word and its definition to a list. When you're done, <em>Export CSV…</em> saves the list as a spreadsheet file you can import into flashcard apps.</p>
+
+<div class="box ios">
+  <span class="label">A Mac app in an iOS book?</span>
+  <p>Yes, on purpose. Menu bar apps only exist on macOS, but almost everything in this chapter (Swift itself, SwiftUI, Observation, Codable, the Xcode project model, sandboxing) is the same on iPhone and iPad. Building for the Mac first lets us skip simulators and provisioning profiles while we learn. Wherever the code reaches for something Mac-only, a box like this one explains what you would use on iOS instead.</p>
+</div>
+
+<nav class="toc" aria-label="Contents">
+  <strong>In this chapter</strong>
+  <ol>
+    <li><a href="#project">The shape of an Xcode project</a></li>
+    <li><a href="#architecture">Splitting the app into pieces</a></li>
+    <li><a href="#app">The entry point: <code>VokieApp.swift</code></a></li>
+    <li><a href="#model">The model: <code>VocabularyStore.swift</code></a></li>
+    <li><a href="#lookup">Talking to the system: <code>DictionaryLookup.swift</code></a></li>
+    <li><a href="#view">The interface: <code>MenuBarView.swift</code></a></li>
+    <li><a href="#flow">Following one word through the app</a></li>
+    <li><a href="#exercises">Exercises</a></li>
+    <li><a href="#glossary">Key terms</a></li>
+  </ol>
+</nav>
+
+<!-- ───────────────────────────── 1 ───────────────────────────── -->
+<h2 id="project"><span class="num">4.1</span>The shape of an Xcode project</h2>
+
+<p>Open <code>Vokie.xcodeproj</code> and the Project navigator on the left shows this:</p>
+
+<pre><code class="language-plaintext">Vokie.xcodeproj           ← the project: build settings, targets
+Vokie/                    ← the source folder
+├── VokieApp.swift        ← app entry point
+├── MenuBarView.swift     ← the interface
+├── VocabularyStore.swift ← the data and its rules
+├── DictionaryLookup.swift← wraps a system API
+└── Assets.xcassets       ← app icon, accent color</code></pre>
+
+<p>Three Xcode ideas are worth getting straight now, because every Apple-platform app has them.</p>
+
+<h3>Project, target, product</h3>
+<p>A <strong>project</strong> is a container for settings and files. A <strong>target</strong> is one thing the project builds, such as an app, a widget, or a test bundle. The <strong>product</strong> is what the target produces. Vokie has one target, also called <code>Vokie</code>, and its product is <code>Vokie.app</code>.</p>
+
+<p>An <code>.app</code> is not a single file. It is a folder, called a <em>bundle</em>, that Finder displays as one icon. Inside are the compiled executable, the resources, and a file called <code>Info.plist</code> that describes the app to the operating system: its name, version, identifier, and how it wants to be launched.</p>
+
+<h3>Folder sync</h3>
+<p>Older Xcode projects listed every source file by hand inside the project file. Newer projects, including this one, use a <em>synchronized folder</em>. Any <code>.swift</code> file you drop into <code>Vokie/</code> is compiled automatically. That's why you won't see any project-file changes for the three new source files in this chapter.</p>
+
+<h3>The two settings that make Vokie a menu bar app</h3>
+<p>Select the project, then the Vokie target, then the <em>Build Settings</em> tab. Two settings were changed from the template:</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Setting</th><th>Value</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td><code>INFOPLIST_KEY_LSUIElement</code></td><td><code>YES</code></td><td>Writes <code>LSUIElement = true</code> into Info.plist. The system then runs the app as an "agent": no Dock icon, no app menu, only the menu bar item.</td></tr>
+    <tr><td><code>ENABLE_USER_SELECTED_FILES</code></td><td><code>readwrite</code></td><td>Lets the sandboxed app write to a file the user picks in a Save dialog. The template allowed read-only access, which is why CSV export needed this change.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="box why">
+  <span class="label">Why it's built this way: the sandbox</span>
+  <p>The project also has <code>ENABLE_APP_SANDBOX = YES</code>. A sandboxed app runs inside a private container and can't touch your files unless it asks. When it needs more, it requests an <em>entitlement</em>: a signed permission baked into the app. "User-selected files, read-write" means: <em>the user can grant me access to one file at a time by picking it in a system dialog.</em> The dialog runs in a separate system process, so the user's choice is the permission. Every iOS app is sandboxed this way. On the Mac it's optional, but required for the App Store, and a good habit.</p>
+</div>
+
+<!-- ───────────────────────────── 2 ───────────────────────────── -->
+<h2 id="architecture"><span class="num">4.2</span>Splitting the app into pieces</h2>
+
+<p>Before reading any code, look at how responsibilities are divided. Each file has one job, and the arrows show who knows about whom.</p>
+
+<figure>
+<svg viewBox="0 0 720 300" role="img" aria-labelledby="archTitle">
+  <title id="archTitle">Vokie's four files: the App creates the Store and hands it to the View; the View calls the Store; the Store calls DictionaryLookup, which calls macOS Dictionary Services.</title>
+  <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker></defs>
+  <rect class="bx" x="20" y="30" width="200" height="70" rx="8"/>
+  <text class="t" x="40" y="60">VokieApp</text>
+  <text class="s" x="40" y="82">Entry point. Owns the store.</text>
+
+  <rect class="bx hot" x="260" y="30" width="200" height="70" rx="8"/>
+  <text class="t" x="280" y="60">MenuBarView</text>
+  <text class="s" x="280" y="82">What you see and click.</text>
+
+  <rect class="bx hot" x="260" y="190" width="200" height="70" rx="8"/>
+  <text class="t" x="280" y="220">VocabularyStore</text>
+  <text class="s" x="280" y="242">Entries, rules, saving, CSV.</text>
+
+  <rect class="bx" x="500" y="190" width="200" height="70" rx="8"/>
+  <text class="t" x="520" y="220">DictionaryLookup</text>
+  <text class="s" x="520" y="242">Wraps a C system API.</text>
+
+  <rect class="bx" x="500" y="30" width="200" height="70" rx="8" stroke-dasharray="5 4"/>
+  <text class="t" x="520" y="60">macOS Dictionary</text>
+  <text class="s" x="520" y="82">Built into the system.</text>
+
+  <path class="ln" d="M220 65 H256" marker-end="url(#arr)"/>
+  <path class="ln" d="M120 100 V225 H256" marker-end="url(#arr)"/>
+  <text class="s" x="130" y="215">creates</text>
+  <path class="ln" d="M360 100 V186" marker-end="url(#arr)"/>
+  <text class="s" x="352" y="150" text-anchor="end">calls add(_:)</text>
+  <path class="ln" d="M460 225 H496" marker-end="url(#arr)"/>
+  <path class="ln" d="M600 190 V104" marker-end="url(#arr)"/>
+  <text class="s" x="592" y="150" text-anchor="end">DCSCopyTextDefinition</text>
+</svg>
+<figcaption>Arrows point from the code that knows to the code it uses. Nothing points back at the view: the store never knows anything is on screen.</figcaption>
+</figure>
+
+<p>This is a lightweight version of a pattern you'll see described as <strong>Model–View</strong> (or MVVM, with the store as the "view model"). The useful rule is simpler than any acronym:</p>
+
+<ul>
+  <li><strong>Views describe the screen and forward user actions.</strong> They hold only short-lived interface state, such as the text currently in the field.</li>
+  <li><strong>The model owns the data and the rules.</strong> "No duplicates", "trim whitespace", and "save after every change" all live here, so they're true however a word gets added.</li>
+  <li><strong>System APIs get wrapped.</strong> The rest of the app calls <code>DictionaryLookup.define("word")</code> and never sees the awkward C function underneath.</li>
+</ul>
+
+<p>Because the store doesn't import SwiftUI, you can test it without any interface at all. While building Vokie, that's exactly how its logic was checked: a ten-line program created a store, added words, and printed the CSV.</p>
+
+<!-- ───────────────────────────── 3 ───────────────────────────── -->
+<h2 id="app"><span class="num">4.3</span>The entry point: <code>VokieApp.swift</code></h2>
+
+<div class="file">Vokie/VokieApp.swift</div>
+<pre><code class="language-swift">import SwiftUI
+
+@main
+struct VokieApp: App {
+    @State private var store = VocabularyStore()
+
+    var body: some Scene {
+        MenuBarExtra("Vokie", systemImage: "character.book.closed") {
+            MenuBarView(store: store)
+        }
+        .menuBarExtraStyle(.window)
+    }
+}</code></pre>
+
+<p>Fourteen lines, and nearly every one introduces an idea.</p>
+
+<h3><code>import SwiftUI</code></h3>
+<p>An <code>import</code> makes a <em>module</em> (a library of types and functions) available in this file. SwiftUI is Apple's declarative interface framework. Importing it also brings in Foundation, the general-purpose library for strings, dates, files, and so on.</p>
+
+<h3><code>@main</code></h3>
+<p>Every program needs one starting point. In a command-line script that's the top of <code>main.swift</code>. In an app you mark one type with <code>@main</code>, and Swift generates the startup code that creates that type and hands control to it. Only one type in a target may be <code>@main</code>.</p>
+
+<h3><code>struct VokieApp: App</code></h3>
+<p>This declares a <strong>struct</strong> named <code>VokieApp</code> that <strong>conforms to the protocol</strong> <code>App</code>. A protocol is a contract, a list of requirements a type promises to meet. <code>App</code> has essentially one requirement: provide a <code>body</code> describing the app's scenes. Meet the contract, and SwiftUI handles everything else: the run loop, events, windows.</p>
+
+<div class="box syntax">
+  <span class="label">Swift syntax: <code>some Scene</code></span>
+  <p><code>var body: some Scene</code> is a <em>computed property</em> (no stored value, just code that runs when you read it) whose type is an <strong>opaque type</strong>. <code>some Scene</code> means "one specific type that conforms to <code>Scene</code>; the compiler knows exactly which, but I'm not going to spell it out." The real type here is long and generated, something like <code>MenuBarExtra&lt;Label, MenuBarView&gt;</code> with a style modifier wrapped around it. You'll write <code>some View</code> constantly for the same reason.</p>
+</div>
+
+<h3><code>MenuBarExtra(…) { … }</code>: scenes and trailing closures</h3>
+<p>A <strong>scene</strong> is a top-level piece of an app's interface that the system manages. On iOS that's almost always a <code>WindowGroup</code>. Vokie uses <code>MenuBarExtra</code>, a scene that puts an item in the Mac menu bar. The first two arguments are its title (read by VoiceOver) and its icon, an <a href="https://developer.apple.com/sf-symbols/">SF Symbol</a> named <code>character.book.closed</code>.</p>
+
+<p>The <code>{ MenuBarView(store: store) }</code> part is a <strong>trailing closure</strong>. When a function's last parameter is a closure, Swift lets you write it after the parentheses. This closure is also a <em>view builder</em>: a closure that lists views, which SwiftUI combines. That's why it can contain a bare <code>MenuBarView(...)</code> with no <code>return</code>.</p>
+
+<h3><code>.menuBarExtraStyle(.window)</code>: modifiers</h3>
+<p>Methods that start with a dot on their own line are <strong>modifiers</strong>. Each one returns a new, modified version of what it's attached to. The default menu bar style is an ordinary drop-down menu, which can't hold a text field. <code>.window</code> makes it a small floating panel that can hold any SwiftUI view.</p>
+
+<p>The leading dot in <code>.window</code> is <strong>implicit member syntax</strong>. The parameter's type is already known, so you can write <code>.window</code> instead of <code>WindowMenuBarExtraStyle.window</code>.</p>
+
+<h3><code>@State private var store = VocabularyStore()</code></h3>
+<p>This line answers an important question: <em>who owns the data?</em> SwiftUI structs like <code>VokieApp</code> are cheap descriptions that SwiftUI may create and throw away many times. If we wrote a plain <code>let store = VocabularyStore()</code>, a new store could be created each time and the list would vanish.</p>
+<p><code>@State</code> is a <strong>property wrapper</strong>. It tells SwiftUI: "create this value once, keep it in your own storage for as long as this part of the interface exists, and give me the same one every time." The app creates the store here, at the very top, and passes it down to the view. <code>private</code> means no code outside this struct can touch the property.</p>
+
+<div class="box ios">
+  <span class="label">On iOS</span>
+  <p>Replace <code>MenuBarExtra</code> with <code>WindowGroup { MenuBarView(store: store) }</code> and the rest of this file stays the same. The <code>@main</code> app struct, <code>@State</code> ownership, and scenes all work identically.</p>
+</div>
+
+<!-- ───────────────────────────── 4 ───────────────────────────── -->
+<h2 id="model"><span class="num">4.4</span>The model: <code>VocabularyStore.swift</code></h2>
+
+<p>This file contains the most Swift language features, so we'll take it in pieces.</p>
+
+<h3>A single entry: a struct</h3>
+<div class="file">Vokie/VocabularyStore.swift</div>
+<pre><code class="language-swift">struct VocabularyEntry: Codable, Identifiable, Hashable {
+    var id = UUID()
+    var word: String
+    var definition: String
+    var dateAdded = Date()
+}</code></pre>
+
+<p>One word in the list is a <strong>struct</strong>, a <em>value type</em>. Assigning a struct to a new variable copies it; changing the copy never affects the original. That's the right default for plain data like "a word and its definition".</p>
+
+<p>Three protocols appear after the colon. None of them requires us to write any code, because Swift can <em>synthesize</em> the implementation when every stored property already supports it:</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Protocol</th><th>Promise</th><th>Who needs it</th></tr></thead>
+  <tbody>
+    <tr><td><code>Codable</code></td><td>Can be converted to and from formats like JSON</td><td>Saving the list to disk</td></tr>
+    <tr><td><code>Identifiable</code></td><td>Has a stable <code>id</code> property</td><td>SwiftUI's <code>ForEach</code>, to track rows as they're added or removed</td></tr>
+    <tr><td><code>Hashable</code></td><td>Can be compared and hashed</td><td>Sets and dictionaries; a common default for model types</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="box syntax">
+  <span class="label">Swift syntax: default values and memberwise initializers</span>
+  <p><code>id</code> and <code>dateAdded</code> have default values; <code>word</code> and <code>definition</code> don't. Swift automatically writes a <em>memberwise initializer</em> for structs, and parameters with defaults become optional. So both of these work:</p>
+  <pre><code class="language-swift">VocabularyEntry(word: "run", definition: "move fast")
+VocabularyEntry(id: someID, word: "run", definition: "move fast", dateAdded: someDate)</code></pre>
+  <p>Notice there are no type annotations on <code>id</code> or <code>dateAdded</code>. Swift <strong>infers</strong> <code>UUID</code> and <code>Date</code> from the values.</p>
+</div>
+
+<h3>The store: an observable class</h3>
+<pre><code class="language-swift">@Observable
+final class VocabularyStore {
+    private(set) var entries: [VocabularyEntry] = []
+    private let fileURL: URL
+    …
+}</code></pre>
+
+<p>The store is a <strong>class</strong>, a <em>reference type</em>. Passing a class instance around passes a pointer to the <em>same</em> object. That's exactly what we want here: the app and the view must share one list, not each get a copy.</p>
+
+<div class="box why">
+  <span class="label">Why it's built this way: struct or class?</span>
+  <p>A good rule of thumb: use a <strong>struct</strong> for data that represents a value (an entry, a coordinate, a color). Use a <strong>class</strong> for something with an identity that several parts of the app share and watch for changes (a store, a network session, a document). <code>VocabularyEntry</code> is a value; <code>VocabularyStore</code> is a thing.</p>
+</div>
+
+<p>Three keywords shape the class:</p>
+<ul>
+  <li><code>@Observable</code> is a <strong>macro</strong>, code that writes code at compile time. It rewrites each stored property so that reading it records "someone is interested" and writing it announces "this changed". When a SwiftUI view's <code>body</code> reads <code>store.entries</code>, SwiftUI notices, and redraws that view whenever <code>entries</code> changes. You never write a "please refresh" call.</li>
+  <li><code>final</code> means no other class may subclass this one. It states your intent, and lets the compiler call methods directly instead of looking them up at runtime.</li>
+  <li><code>private(set) var entries</code> means anyone can <em>read</em> the entries but only the store itself can <em>change</em> them. The view can't do <code>store.entries.append(…)</code> and skip the duplicate check. It has to go through <code>add(_:)</code>. This is how the model protects its rules.</li>
+</ul>
+
+<p><code>[VocabularyEntry]</code> is Swift's shorthand for <code>Array&lt;VocabularyEntry&gt;</code>, an ordered list where every element has that type.</p>
+
+<h3>Results as an enum with associated values</h3>
+<pre><code class="language-swift">enum AddResult {
+    case added(VocabularyEntry)
+    case duplicate
+    case notFound
+    case empty
+}</code></pre>
+
+<p>Adding a word can go four ways. Many languages would return a <code>Bool</code> or throw an error. Swift's <strong>enums</strong> are more expressive: each <code>case</code> can carry its own data, called an <em>associated value</em>. Only <code>.added</code> carries the new entry, because only success has one. The view will <code>switch</code> over the result, and the compiler will refuse to build if any case is forgotten.</p>
+
+<p>The enum is declared <em>inside</em> the class, so its full name is <code>VocabularyStore.AddResult</code>. Nesting a type inside another is how Swift groups related types without cluttering the global namespace.</p>
+
+<h3>The initializer, and where files go</h3>
+<pre><code class="language-swift">init(fileURL: URL? = nil) {
+    if let fileURL {
+        self.fileURL = fileURL
+    } else {
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Vokie", isDirectory: true)
+        try? FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
+        self.fileURL = support.appendingPathComponent("vocabulary.json")
+    }
+    load()
+}</code></pre>
+
+<div class="box syntax">
+  <span class="label">Swift syntax: optionals and <code>if let</code></span>
+  <p><code>URL?</code> is an <strong>optional</strong>: it holds either a <code>URL</code> or <code>nil</code> (nothing). Swift never lets you use an optional as if it definitely had a value. You have to <em>unwrap</em> it first. <code>if let fileURL { … }</code> is shorthand for <code>if let fileURL = fileURL</code>: "if this optional has a value, bind it to a non-optional constant named <code>fileURL</code> inside the braces."</p>
+  <p>The default <code>= nil</code> means the app calls plain <code>VocabularyStore()</code>, while a test can pass a temporary file path. This is a lightweight form of <em>dependency injection</em>.</p>
+</div>
+
+<p>Swift has a strict rule here: every stored property must have a value before an initializer finishes, and before you call methods on <code>self</code>. That's why <code>self.fileURL</code> is assigned in <em>both</em> branches of the <code>if</code> before <code>load()</code> runs. Delete either assignment and the compiler stops you.</p>
+
+<p><code>try?</code> calls something that might throw an error, and turns any failure into <code>nil</code> instead. It's used here because a failure to create the folder will show up anyway when saving fails. That's acceptable in a small app; in a larger app you'd likely report it.</p>
+
+<div class="box why">
+  <span class="label">Why Application Support?</span>
+  <p>Apple platforms give apps standard folders with standard meanings. <em>Documents</em> is for files the user thinks of as theirs. <em>Caches</em> can be deleted by the system. <em>Application Support</em> is for data the app needs but the user doesn't manage directly, which describes our JSON file. Because Vokie is sandboxed, this path quietly resolves inside its private container: <code>~/Library/Containers/…/Data/Library/Application Support/Vokie/</code>.</p>
+</div>
+
+<h3>Adding a word: <code>guard</code> and closures</h3>
+<pre><code class="language-swift">func add(_ input: String) -&gt; AddResult {
+    let word = input.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !word.isEmpty else { return .empty }
+    if entries.contains(where: { $0.word.caseInsensitiveCompare(word) == .orderedSame }) {
+        return .duplicate
+    }
+    guard let definition = DictionaryLookup.define(word) else { return .notFound }
+    let entry = VocabularyEntry(word: word, definition: definition)
+    entries.append(entry)
+    save()
+    return .added(entry)
+}</code></pre>
+
+<p>Read this function top to bottom and it reads like the rules themselves: trim it; reject if empty; reject if we have it; reject if the dictionary doesn't; otherwise add, save, report success.</p>
+
+<ul>
+  <li><code>func add(_ input: String) -&gt; AddResult</code>: the underscore removes the <strong>argument label</strong>, so callers write <code>store.add("run")</code> instead of <code>store.add(input: "run")</code>. Inside the function the parameter is still called <code>input</code>. <code>-&gt;</code> introduces the return type.</li>
+  <li><code>let</code> declares a constant; <code>var</code> declares a variable. Prefer <code>let</code>, and Xcode will warn you when a <code>var</code> is never changed.</li>
+  <li><code>guard condition else { return … }</code> is an <strong>early exit</strong>. It says "this must be true to continue", and the <code>else</code> block <em>must</em> leave the function. <code>guard let</code> unwraps an optional and, unlike <code>if let</code>, keeps the unwrapped value available for the rest of the function. That's why <code>definition</code> can be used two lines later.</li>
+  <li><code>{ $0.word.caseInsensitiveCompare(word) == .orderedSame }</code> is a <strong>closure</strong>, an unnamed function passed as an argument. <code>$0</code> is shorthand for its first parameter, here each entry in turn. "Does any entry's word match, ignoring case?"</li>
+</ul>
+
+<h3>Removing, and the shared <code>save()</code></h3>
+<pre><code class="language-swift">func remove(_ entry: VocabularyEntry) {
+    entries.removeAll { $0.id == entry.id }
+    save()
+}</code></pre>
+<p>Removal matches on <code>id</code>, not on the word, so it always removes exactly the row you clicked. Every method that changes <code>entries</code> ends by calling <code>save()</code>, so the file on disk always matches what's on screen.</p>
+
+<h3>Saving and loading with Codable</h3>
+<pre><code class="language-swift">private func load() {
+    guard let data = try? Data(contentsOf: fileURL) else { return }
+    entries = (try? JSONDecoder().decode([VocabularyEntry].self, from: data)) ?? []
+}
+
+private func save() {
+    guard let data = try? JSONEncoder().encode(entries) else { return }
+    try? data.write(to: fileURL, options: .atomic)
+}</code></pre>
+
+<p>This is the payoff of adding <code>Codable</code> to the struct: the whole array becomes JSON in one call. <code>[VocabularyEntry].self</code> refers to the <em>type</em> itself rather than a value of it, which tells the decoder what shape to expect.</p>
+<p><code>??</code> is the <strong>nil-coalescing operator</strong>: "use the value on the left, or if it's <code>nil</code>, the one on the right." If the file is corrupt, we start with an empty list instead of crashing.</p>
+<p><code>.atomic</code> writes to a temporary file first, then swaps it into place. If the Mac loses power halfway through a save, you get the old file or the new one, never a half-written mix.</p>
+
+<h3>The CSV export: computed properties and string escaping</h3>
+<pre><code class="language-swift">var csv: String {
+    var lines = ["vocabulary,definition"]
+    for entry in entries {
+        lines.append("\(Self.csvField(entry.word)),\(Self.csvField(entry.definition))")
+    }
+    return lines.joined(separator: "\r\n") + "\r\n"
+}
+
+private static func csvField(_ value: String) -&gt; String {
+    "\"" + value.replacingOccurrences(of: "\"", with: "\"\"") + "\""
+}</code></pre>
+
+<p><code>csv</code> is a <strong>computed property</strong>: it looks like a stored value from outside (<code>store.csv</code>), but runs code every time it's read. That keeps it from ever falling out of date with <code>entries</code>.</p>
+<p><code>"\(…)"</code> is <strong>string interpolation</strong>: the expression inside is evaluated and inserted into the string. <code>\"</code> is an escaped quote character.</p>
+<p>Definitions are full of commas, so every field is wrapped in quotes, and any quote <em>inside</em> a field is doubled. That's the CSV standard (RFC 4180), which is also why lines end in <code>\r\n</code>. <code>static</code> means the function belongs to the type, not to any one store, so it's called as <code>Self.csvField</code>. And since its body is a single expression, Swift lets us leave out <code>return</code>.</p>
+
+<!-- ───────────────────────────── 5 ───────────────────────────── -->
+<h2 id="lookup"><span class="num">4.5</span>Talking to the system: <code>DictionaryLookup.swift</code></h2>
+
+<div class="file">Vokie/DictionaryLookup.swift</div>
+<pre><code class="language-swift">import CoreServices
+import Foundation
+
+/// Looks words up in the built-in macOS Dictionary (offline, no network needed).
+enum DictionaryLookup {
+    static func define(_ word: String) -&gt; String? {
+        let range = CFRange(location: 0, length: word.utf16.count)
+        guard let raw = DCSCopyTextDefinition(nil, word as NSString, range)?.takeRetainedValue() else {
+            return nil
+        }
+        return clean(raw as String)
+    }
+    …
+}</code></pre>
+
+<h3>An enum with no cases</h3>
+<p><code>DictionaryLookup</code> is an <code>enum</code> with no <code>case</code>s, only <code>static</code> functions. An enum with no cases can't be instantiated, so <code>DictionaryLookup()</code> is a compile error. That makes it a clean <strong>namespace</strong>: a named group of related functions. You'll see this pattern throughout Swift code.</p>
+
+<p>The comment starting with <code>///</code> is a <strong>documentation comment</strong>. Option-click <code>DictionaryLookup</code> anywhere in Xcode and this text appears in a popover.</p>
+
+<h3>Calling a C API from Swift</h3>
+<p><code>DCSCopyTextDefinition</code> comes from Dictionary Services, part of <code>CoreServices</code>, a C framework that predates Swift by decades. Swift can call C directly, but C's conventions show through in three places:</p>
+
+<ul>
+  <li><strong><code>CFRange</code> and <code>utf16.count</code>.</strong> The function wants to know which part of the string to look up, measured in UTF-16 code units, the way Apple's older string types count. Swift's <code>String</code> counts <em>characters</em> by default, and those can differ: an emoji is one character but two UTF-16 units. Asking for <code>word.utf16.count</code> gives the C function the measurement it expects.</li>
+  <li><strong><code>word as NSString</code>.</strong> The function takes a <code>CFString</code>. Core Foundation's <code>CFString</code> and Foundation's <code>NSString</code> are <em>toll-free bridged</em>: the same object in memory, usable as either. Swift's <code>String</code> converts to <code>NSString</code> with <code>as</code>, and <code>NSString</code> is accepted where <code>CFString</code> is expected.</li>
+  <li><strong><code>?.takeRetainedValue()</code>.</strong> C has no automatic memory management. The result comes back as <code>Unmanaged&lt;CFString&gt;?</code>, so Swift is telling you it doesn't know who's responsible for freeing it. Core Foundation's naming convention answers that: functions with <em>Copy</em> or <em>Create</em> in their name hand ownership to the caller. <code>takeRetainedValue()</code> means "I own this now; manage it for me." The <code>?.</code> is <strong>optional chaining</strong>: if the function returned <code>nil</code> (no definition), the whole expression is <code>nil</code> and the <code>guard</code> exits.</li>
+</ul>
+
+<div class="box why">
+  <span class="label">Why wrap it?</span>
+  <p>All of that awkwardness is contained in about five lines. The rest of the app sees one clean Swift function, <code>define(_:) -&gt; String?</code>. If Apple replaces this API, or you switch to an online dictionary, only this file changes.</p>
+</div>
+
+<div class="box ios">
+  <span class="label">On iOS</span>
+  <p>Dictionary Services doesn't exist on iOS. The nearest equivalent is <code>UIReferenceLibraryViewController</code>, which shows Apple's dictionary in its own screen but doesn't give your code the text. An iOS version of Vokie would call a web dictionary API instead, probably with <code>URLSession</code> and <code>async</code>/<code>await</code>. Because of the wrapper, that change would be confined to this one file.</p>
+</div>
+
+<h3>Cleaning up the result: strings and indices</h3>
+<p>The raw text looks like this:</p>
+<pre><code class="language-plaintext">ephemeral e·phem·er·al | əˈfem(ə)rəl | adjective lasting for a very short time: … DERIVATIVES … ORIGIN …</code></pre>
+
+<pre><code class="language-swift">static func clean(_ text: String) -&gt; String {
+    var result = text
+    let pipes = result.indices.filter { result[$0] == "|" }
+    if pipes.count &gt;= 2 {
+        result = String(result[result.index(after: pipes[1])...])
+    }
+    let tailMarkers = [" PHRASES ", " PHRASAL VERBS ", " DERIVATIVES ", " ORIGIN "]
+    if let cut = tailMarkers.compactMap({ result.range(of: $0)?.lowerBound }).min() {
+        result = String(result[..&lt;cut])
+    }
+    return result.trimmingCharacters(in: .whitespacesAndNewlines)
+}</code></pre>
+
+<div class="box syntax">
+  <span class="label">Swift syntax: why you can't write <code>text[5]</code></span>
+  <p>Coming from other languages, you might expect to index strings by number. Swift doesn't allow it, because characters can take a variable number of bytes (think <code>é</code> or emoji). Jumping to "character 5" would mean scanning from the start, and Swift won't hide that cost behind <code>[5]</code>. Instead you work with <code>String.Index</code> values that the string itself hands out: <code>result.indices</code>, <code>result.index(after:)</code>, <code>range(of:)?.lowerBound</code>.</p>
+  <p><code>result[i...]</code> and <code>result[..&lt;i]</code> use <strong>range operators</strong>: "from <code>i</code> to the end" and "from the start up to, but not including, <code>i</code>." Slicing a string gives a <code>Substring</code>, a lightweight view into the original, so we wrap it in <code>String(…)</code> to make an independent copy.</p>
+</div>
+
+<p>The second step chains two collection operations. <code>compactMap</code> transforms each marker into "where it appears, if anywhere" and drops the <code>nil</code>s. <code>.min()</code> picks the earliest position. We cut there, because whichever extra section comes first, everything after it goes.</p>
+
+<!-- ───────────────────────────── 6 ───────────────────────────── -->
+<h2 id="view"><span class="num">4.6</span>The interface: <code>MenuBarView.swift</code></h2>
+
+<p>This is the biggest file, but it's built from a small number of repeating ideas.</p>
+
+<h3>The view's state</h3>
+<div class="file">Vokie/MenuBarView.swift</div>
+<pre><code class="language-swift">struct MenuBarView: View {
+    let store: VocabularyStore
+
+    @State private var input = ""
+    @State private var status: Status?
+    @FocusState private var inputFocused: Bool
+
+    private struct Status {
+        var message: String
+        var isError: Bool
+    }
+    …</code></pre>
+
+<p>A SwiftUI view is a struct that conforms to <code>View</code> and provides a <code>body</code>. Look at the three different ways this view holds data. The distinction is one of the most important ideas in SwiftUI:</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Declaration</th><th>Who owns it</th><th>Why here</th></tr></thead>
+  <tbody>
+    <tr><td><code>let store: VocabularyStore</code></td><td>Someone else (the App)</td><td>The view only uses the store. Because the store is <code>@Observable</code>, SwiftUI redraws this view when the parts of it that <code>body</code> reads change. No wrapper is needed.</td></tr>
+    <tr><td><code>@State private var input</code></td><td>This view</td><td>Short-lived interface state: the text in the field right now. No other part of the app cares.</td></tr>
+    <tr><td><code>@FocusState private var inputFocused</code></td><td>This view</td><td>A special kind of state that's linked to the keyboard focus.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p><code>Status</code> is a tiny <code>private</code> struct nested inside the view, a message plus a flag for whether to show it in red. Because no other file needs it, it stays out of sight. <code>status: Status?</code> is optional because most of the time there's no message.</p>
+
+<h3>Layout with stacks</h3>
+<pre><code class="language-swift">var body: some View {
+    VStack(alignment: .leading, spacing: 10) {
+        TextField("Paste a word and press Return", text: $input)
+            .textFieldStyle(.roundedBorder)
+            .focused($inputFocused)
+            .onSubmit(addWord)
+
+        if let status {
+            Text(status.message)
+                .font(.caption)
+                .foregroundStyle(status.isError ? Color.red : Color.secondary)
+                .lineLimit(3)
+        }
+
+        Divider()
+        …</code></pre>
+
+<p>SwiftUI layouts are built from three stacks: <code>VStack</code> (top to bottom), <code>HStack</code> (left to right), and <code>ZStack</code> (front to back). Nest them, and use <code>Spacer()</code> to push things apart. There are no pixel coordinates and no constraints to manage.</p>
+
+<div class="box syntax">
+  <span class="label">Swift syntax: the <code>$</code> prefix and bindings</span>
+  <p><code>text: $input</code> doesn't pass the <em>string</em>. It passes a <strong>binding</strong>, a two-way connection to the <code>@State</code> storage. The text field reads its current value through the binding and writes back through it every time you type. <code>input</code> is the value; <code>$input</code> is the connection to the place it's stored. The same applies to <code>.focused($inputFocused)</code>: the field updates that <code>Bool</code> when it gains or loses focus, and setting it to <code>true</code> moves focus into the field.</p>
+</div>
+
+<p><code>.onSubmit(addWord)</code> passes the method <code>addWord</code> itself, not its result (note there are no parentheses). Swift functions are values, so this means "call <code>addWord()</code> when the user presses Return."</p>
+
+<p>The <code>if let status { … }</code> inside the stack shows that a view builder can contain ordinary <code>if</code> statements. When there's no status, the <code>Text</code> isn't there at all. Similarly, <code>condition ? a : b</code> is the <strong>ternary operator</strong>, a compact if/else that produces a value.</p>
+
+<h3>Lists with <code>ForEach</code></h3>
+<pre><code class="language-swift">if store.entries.isEmpty {
+    Text("No words yet.")
+        .foregroundStyle(.secondary)
+        .frame(maxWidth: .infinity, minHeight: 60)
+} else {
+    ScrollView {
+        LazyVStack(alignment: .leading, spacing: 8) {
+            ForEach(store.entries.reversed()) { entry in
+                EntryRow(entry: entry) { store.remove(entry) }
+            }
+        }
+    }
+    .frame(maxHeight: 260)
+}</code></pre>
+
+<p>This is where <code>Identifiable</code> pays off. <code>ForEach</code> builds one row per entry, and uses each entry's <code>id</code> to tell rows apart. When you add a word, SwiftUI can tell exactly one new row appeared and leave the others alone. <code>reversed()</code> shows the newest word first without changing the stored order.</p>
+
+<p><code>{ entry in … }</code> is a closure with a named parameter. You could write <code>$0</code>, but a name reads better in anything longer than one expression. <code>LazyVStack</code> only creates rows as they scroll into view, which matters once the list holds hundreds of words. <code>.frame(maxHeight: 260)</code> caps the panel's height so the list scrolls instead of growing past the screen.</p>
+
+<h3>Buttons, menus, and roles</h3>
+<pre><code class="language-swift">HStack {
+    Text("\(store.entries.count) word\(store.entries.count == 1 ? "" : "s")")
+        .font(.caption)
+        .foregroundStyle(.secondary)
+    Spacer()
+    Button("Export CSV…", action: exportCSV)
+        .disabled(store.entries.isEmpty)
+    Menu {
+        Button("Clear All Words", role: .destructive, action: confirmClear)
+            .disabled(store.entries.isEmpty)
+        Divider()
+        Button("Quit Vokie") { NSApp.terminate(nil) }
+    } label: {
+        Image(systemName: "ellipsis.circle")
+    }
+    …
+}</code></pre>
+
+<p>A few things to notice:</p>
+<ul>
+  <li>A ternary inside string interpolation produces "1 word" but "2 words". Small details like this make an app feel cared for.</li>
+  <li><code>.disabled(store.entries.isEmpty)</code> greys out the button when there's nothing to export. Because it reads <code>store.entries</code>, the button re-enables itself the moment you add a word. That's Observation at work.</li>
+  <li><code>role: .destructive</code> tells the system this action destroys data, and the system styles it to match. You describe <em>what it is</em>; the platform decides <em>how it looks</em>.</li>
+  <li><code>Menu { … } label: { … }</code> shows <strong>multiple trailing closures</strong>: the first has no label, and later ones are introduced by their argument label.</li>
+  <li><code>Button("Quit Vokie") { NSApp.terminate(nil) }</code>. A menu bar app has no Dock icon and no app menu, so without this button the only way to quit would be Activity Monitor.</li>
+</ul>
+
+<h3>Turning results into messages: <code>switch</code></h3>
+<pre><code class="language-swift">private func addWord() {
+    let word = input.trimmingCharacters(in: .whitespacesAndNewlines)
+    switch store.add(word) {
+    case .added(let entry):
+        status = Status(message: "Added “\(entry.word)”.", isError: false)
+        input = ""
+    case .duplicate:
+        status = Status(message: "“\(word)” is already in your list.", isError: true)
+    case .notFound:
+        status = Status(message: "No dictionary entry for “\(word)”.", isError: true)
+    case .empty:
+        status = nil
+    }
+}</code></pre>
+
+<p>Here the enum from §4.4 comes back. <code>case .added(let entry)</code> both matches the case and pulls out its associated value. Swift's <code>switch</code> must be <strong>exhaustive</strong>: if you later add a fifth case to <code>AddResult</code>, this function stops compiling until you handle it. That's a feature. The compiler shows you every place the new case needs handling.</p>
+
+<p>Notice that the input is only cleared on success. If a word isn't found, it stays in the field so you can fix a typo.</p>
+
+<div class="box syntax">
+  <span class="label">Swift syntax: why can a struct's method change <code>status</code>?</span>
+  <p>Normally a method on a struct can't modify the struct's properties unless it's marked <code>mutating</code>. But <code>status</code> and <code>input</code> aren't really stored in the struct. <code>@State</code> keeps them in SwiftUI's storage, and the struct only holds a handle to that. Setting <code>status</code> writes through the handle, so no <code>mutating</code> is needed, and SwiftUI knows to redraw.</p>
+</div>
+
+<h3>Stepping outside SwiftUI: AppKit panels</h3>
+<pre><code class="language-swift">private func exportCSV() {
+    let panel = NSSavePanel()
+    panel.allowedContentTypes = [.commaSeparatedText]
+    panel.nameFieldStringValue = "vocabulary.csv"
+    panel.canCreateDirectories = true
+    NSApp.activate()
+    guard panel.runModal() == .OK, let url = panel.url else { return }
+    do {
+        try store.csv.write(to: url, atomically: true, encoding: .utf8)
+        status = Status(message: "Exported \(store.entries.count) words to \(url.lastPathComponent).", isError: false)
+    } catch {
+        status = Status(message: "Export failed: \(error.localizedDescription)", isError: true)
+    }
+}</code></pre>
+
+<p>Names starting with <code>NS</code> (<code>NSSavePanel</code>, <code>NSApp</code>, <code>NSAlert</code>) come from <strong>AppKit</strong>, the Mac's older, object-oriented interface framework. SwiftUI is built on top of it, and you can use both in the same file. Here, AppKit's save panel gives us direct control over the dialog.</p>
+
+<ul>
+  <li><code>.commaSeparatedText</code> is a <strong>Uniform Type Identifier</strong> (from the <code>UniformTypeIdentifiers</code> import). Apple platforms describe file types this way rather than by extension alone.</li>
+  <li><code>NSApp.activate()</code> brings Vokie to the front first. A menu bar app is never the "active" app by default, so without this call the Save dialog could open behind other windows.</li>
+  <li><code>runModal()</code> blocks until the user clicks Save or Cancel. The <code>guard</code> combines two checks with a comma: the user clicked OK, <em>and</em> a URL exists.</li>
+  <li>This is the moment the sandbox entitlement from §4.1 matters. The URL the panel returns comes with permission to write that one file.</li>
+</ul>
+
+<div class="box syntax">
+  <span class="label">Swift syntax: <code>do</code> / <code>try</code> / <code>catch</code></span>
+  <p>Functions that can fail are marked <code>throws</code>, and every call to one must be marked <code>try</code>. Swift makes failure points visible in the code. Inside <code>do { … }</code>, a thrown error jumps to <code>catch</code>, where an implicit constant named <code>error</code> holds it. Compare this with the <code>try?</code> we used for saving JSON: there, failure was acceptable to ignore. Here, the user explicitly asked for an export, so they deserve to hear if it failed.</p>
+</div>
+
+<div class="box ios">
+  <span class="label">On iOS</span>
+  <p>There's no <code>NSSavePanel</code> on iOS. You'd use SwiftUI's <code>.fileExporter(isPresented:document:contentType:defaultFilename:onCompletion:)</code> modifier, or a <code>ShareLink</code> that offers the CSV to Files, Mail, AirDrop, and other apps. The AppKit equivalent on iOS is <strong>UIKit</strong>: <code>UI</code> prefixes instead of <code>NS</code>, such as <code>UIApplication</code> and <code>UIAlertController</code>.</p>
+</div>
+
+<h3>Confirming a destructive action</h3>
+<pre><code class="language-swift">private func confirmClear() {
+    let alert = NSAlert()
+    alert.messageText = "Clear all \(store.entries.count) words?"
+    alert.informativeText = "This can't be undone. Export a CSV first if you want to keep them."
+    alert.addButton(withTitle: "Clear")
+    alert.addButton(withTitle: "Cancel")
+    alert.buttons[0].hasDestructiveAction = true
+    NSApp.activate()
+    if alert.runModal() == .alertFirstButtonReturn {
+        store.removeAll()
+        status = nil
+    }
+}</code></pre>
+<p>Apple's Human Interface Guidelines ask apps to confirm actions that can't be undone, and to say what will happen in specific terms ("Clear all 42 words?" rather than "Are you sure?"). Marking the first button as destructive gives it the system's warning style.</p>
+
+<h3>A small reusable view: <code>EntryRow</code></h3>
+<pre><code class="language-swift">private struct EntryRow: View {
+    let entry: VocabularyEntry
+    let onDelete: () -&gt; Void
+
+    @State private var hovering = false
+
+    var body: some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(entry.word).font(.headline)
+                Text(entry.definition)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .help(entry.definition)
+            }
+            Spacer(minLength: 4)
+            Button(action: onDelete) {
+                Image(systemName: "xmark.circle.fill")
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .opacity(hovering ? 1 : 0)
+            .help("Remove")
+        }
+        .contentShape(Rectangle())
+        .onHover { hovering = $0 }
+    }
+}</code></pre>
+
+<p>Splitting a row into its own view keeps <code>MenuBarView</code> readable, and gives each row its own <code>@State</code>. Each row tracks whether <em>it</em> is being hovered.</p>
+
+<ul>
+  <li><code>let onDelete: () -&gt; Void</code> is a property whose type is a <strong>function type</strong>: a function that takes nothing and returns nothing. The row doesn't know about the store. It just says "I was asked to delete," and its parent decides what that means. This <em>callback</em> pattern keeps small views reusable.</li>
+  <li><code>.lineLimit(2)</code> shortens long definitions to two lines, and <code>.help(entry.definition)</code> shows the full text as a tooltip when you hover. That's a Mac convention.</li>
+  <li><code>.contentShape(Rectangle())</code> makes the whole row respond to the pointer, including the blank space between views, so hover works anywhere in the row.</li>
+  <li><code>.onHover { hovering = $0 }</code> receives <code>true</code> or <code>false</code> as the pointer enters and leaves, and the delete button fades in and out to match.</li>
+</ul>
+
+<div class="box ios">
+  <span class="label">On iOS</span>
+  <p>Touchscreens have no hover, so a hidden-until-hover button would never appear. On iOS you'd put the rows in a <code>List</code> and add <code>.swipeActions { Button("Delete", role: .destructive) { … } }</code>, so users swipe left to delete. Same idea, different platform conventions.</p>
+</div>
+
+<h3>One more project setting: everything on the main actor</h3>
+<p>The project sets <code>SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor</code>. In Swift's concurrency model, the <strong>main actor</strong> represents the main thread, the only thread allowed to update the interface. This setting makes every type in the app main-actor code by default. For a small app that does all its work in response to clicks, that's exactly right, and it means you won't see concurrency warnings about the store being shared between the app and the view. When a later chapter introduces network calls, you'll learn to move specific work off the main actor with <code>async</code> functions.</p>
+
+<!-- ───────────────────────────── 7 ───────────────────────────── -->
+<h2 id="flow"><span class="num">4.7</span>Following one word through the app</h2>
+
+<p>Here's every step, from paste to pixels, when you type <em>ephemeral</em> and press Return:</p>
+
+<figure>
+<svg viewBox="0 0 720 380" role="img" aria-labelledby="flowTitle">
+  <title id="flowTitle">Sequence from pressing Return to the list redrawing.</title>
+  <defs><marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker></defs>
+  <g>
+    <rect class="bx" x="20"  y="20"  width="320" height="54" rx="8"/>
+    <text class="t" x="36" y="43">1 · TextField → onSubmit</text>
+    <text class="s" x="36" y="62">$input already holds "ephemeral"</text>
+
+    <rect class="bx" x="20"  y="110" width="320" height="54" rx="8"/>
+    <text class="t" x="36" y="133">2 · addWord() → store.add(word)</text>
+    <text class="s" x="36" y="152">trim, empty check, duplicate check</text>
+
+    <rect class="bx" x="20"  y="200" width="320" height="54" rx="8"/>
+    <text class="t" x="36" y="223">3 · DictionaryLookup.define</text>
+    <text class="s" x="36" y="242">C call → clean() → String?</text>
+
+    <rect class="bx" x="20"  y="290" width="320" height="54" rx="8"/>
+    <text class="t" x="36" y="313">4 · entries.append + save()</text>
+    <text class="s" x="36" y="332">@Observable records the change</text>
+
+    <rect class="bx" x="380" y="290" width="320" height="54" rx="8"/>
+    <text class="t" x="396" y="313">5 · return .added(entry)</text>
+    <text class="s" x="396" y="332">switch sets status, clears input</text>
+
+    <rect class="bx hot" x="380" y="200" width="320" height="54" rx="8"/>
+    <text class="t" x="396" y="223">6 · SwiftUI re-runs body</text>
+    <text class="s" x="396" y="242">views that read entries / status / input</text>
+
+    <rect class="bx hot" x="380" y="110" width="320" height="54" rx="8"/>
+    <text class="t" x="396" y="133">7 · ForEach compares ids</text>
+    <text class="s" x="396" y="152">one new row; the rest are reused</text>
+
+    <rect class="bx hot" x="380" y="20" width="320" height="54" rx="8"/>
+    <text class="t" x="396" y="43">8 · Screen updates</text>
+    <text class="s" x="396" y="62">"Added "ephemeral"." · 1 word</text>
+
+    <path class="ln" d="M180 74 V106" marker-end="url(#arr2)"/>
+    <path class="ln" d="M180 164 V196" marker-end="url(#arr2)"/>
+    <path class="ln" d="M180 254 V286" marker-end="url(#arr2)"/>
+    <path class="ln" d="M340 317 H376" marker-end="url(#arr2)"/>
+    <path class="ln" d="M540 290 V258" marker-end="url(#arr2)"/>
+    <path class="ln" d="M540 200 V168" marker-end="url(#arr2)"/>
+    <path class="ln" d="M540 110 V78" marker-end="url(#arr2)"/>
+  </g>
+</svg>
+<figcaption>Steps 1–5 are our code. The outlined steps 6–8 are SwiftUI’s job. We never told it to redraw; it noticed that the data its views read had changed.</figcaption>
+</figure>
+
+<p>This is the central idea of SwiftUI: <strong>the interface is a function of the data.</strong> You don't find the label and change its text, or insert a row into a table. You change the data, and SwiftUI works out what the screen should look like now. Every design choice in this chapter (the observable store, <code>@State</code> for local values, <code>Identifiable</code> entries, the result enum) exists to make that one idea work cleanly.</p>
+
+<!-- ───────────────────────────── 8 ───────────────────────────── -->
+<h2 id="exercises"><span class="num">4.8</span>Exercises</h2>
+<div class="exercises">
+<ol>
+  <li><strong>Read the compiler.</strong> In <code>add(_:)</code>, change the second <code>guard let definition</code> to <code>if let definition</code> (keeping the <code>else</code> block). What error does Xcode report, and why does <code>guard</code> fix it?</li>
+  <li><strong>Exhaustiveness.</strong> Add a <code>case tooLong</code> to <code>AddResult</code> and reject words over 40 characters. Build before you touch <code>MenuBarView</code> and note where the compiler sends you.</li>
+  <li><strong>A new column.</strong> Add the date to the CSV as a third column. Look up <code>ISO8601DateFormatter</code>, or <code>Date.formatted(.iso8601)</code>. Should the formatting code live in the store or the view? Why?</li>
+  <li><strong>Search.</strong> Add a second <code>@State</code> string and a search field that filters the list. Hint: filter <code>store.entries</code> inside <code>body</code>, never by changing the store.</li>
+  <li><strong>Value or reference?</strong> Temporarily change <code>final class VocabularyStore</code> to <code>struct</code> and delete <code>@Observable</code>. Read every error. Explain in two sentences why the store needs to be a class.</li>
+  <li><strong>Port it.</strong> Create a new iOS App project and bring over <code>VocabularyStore.swift</code> and <code>MenuBarView.swift</code>. Using the "On iOS" boxes as a guide, list every line that won't compile and what you'd replace it with.</li>
+</ol>
+</div>
+
+<!-- ───────────────────────────── 9 ───────────────────────────── -->
+<h2 id="glossary"><span class="num">4.9</span>Key terms</h2>
+<dl class="glossary">
+  <dt>Bundle</dt><dd>A folder, such as <code>Vokie.app</code>, that the system treats as a single item. It holds the executable, resources, and Info.plist.</dd>
+  <dt>Entitlement</dt><dd>A signed permission that lets a sandboxed app do something beyond its defaults.</dd>
+  <dt>Protocol / conformance</dt><dd>A list of requirements, and a type's promise to meet them.</dd>
+  <dt>Value type / reference type</dt><dd>Structs and enums are copied on assignment; class instances are shared.</dd>
+  <dt>Optional</dt><dd>A type that may hold a value or <code>nil</code>, unwrapped with <code>if let</code>, <code>guard let</code>, <code>?.</code>, or <code>??</code>.</dd>
+  <dt>Associated value</dt><dd>Data attached to a single enum case, such as <code>.added(entry)</code>.</dd>
+  <dt>Closure</dt><dd>An unnamed function written inline, often as a trailing closure.</dd>
+  <dt>Property wrapper</dt><dd>An attribute like <code>@State</code> that changes how a property is stored and accessed.</dd>
+  <dt>Macro</dt><dd>Code that generates code at compile time, such as <code>@Observable</code>.</dd>
+  <dt>Binding</dt><dd>A two-way connection to a piece of state, written with <code>$</code>.</dd>
+  <dt>Modifier</dt><dd>A method on a view that returns a modified view, such as <code>.font(.caption)</code>.</dd>
+  <dt>Scene</dt><dd>A top-level unit of interface managed by the system: a window group, a menu bar extra.</dd>
+  <dt>Main actor</dt><dd>The concurrency context for the main thread, where all interface work happens.</dd>
+  <dt>Toll-free bridging</dt><dd>Using a Core Foundation type and its Foundation counterpart, such as <code>CFString</code> and <code>NSString</code>, interchangeably.</dd>
+</dl>
+
+<p style="margin-top:48px;color:var(--muted);font-size:15px;font-family:var(--sans)">Next chapter: we give Vokie a proper settings window, a keyboard shortcut to open it from anywhere, and an introduction to <code>async</code>/<code>await</code> by adding an online dictionary as a fallback.</p>
+
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/swift.min.js"></script>
+<script>
+  try { hljs.highlightAll(); } catch (e) { /* plain code blocks are fine offline */ }
+</script>
+</body>
+</html>
